@@ -1,6 +1,6 @@
 ﻿namespace MiniEProject.Domain.Entities;
 
-public class OrderProduct
+public class OrderProduct :BaseEntity
 {
     public Guid OrderId { get; set; }
     public Order? Order { get; set; }
