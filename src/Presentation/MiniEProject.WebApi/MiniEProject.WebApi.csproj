@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.17" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\Infrastructure\MiniEProject.Infrastructure\MiniEProject.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Infrastructure\MiniEProject.Persistence\MiniEProject.Persistence.csproj" />
   </ItemGroup>
