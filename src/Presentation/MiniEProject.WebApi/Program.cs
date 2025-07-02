@@ -1,7 +1,12 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using MiniEProject.Application.Abstracts.Repositories;
+using MiniEProject.Application.Abstracts.Services;
 using MiniEProject.Domain.Entities;
+using MiniEProject.Persistence;
 using MiniEProject.Persistence.Contexts;
+using MiniEProject.Persistence.Repositories;
+using MiniEProject.Persistence.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,8 +18,10 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<MiniEProjectDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
-
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("Default"));
+});
+builder.Services.RegisterService();
 
 builder.Services.AddIdentity<AppUser, IdentityRole>(
 options =>
