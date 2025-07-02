@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using System;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using MiniEProject.Domain.Entities;
 
@@ -6,7 +7,7 @@ namespace MiniEProject.Persistence.Contexts;
 
 public class MiniEProjectDbContext : IdentityDbContext<AppUser>
 {
-    public MiniEProjectDbContext(DbContextOptions<MiniEProjectDbContext> options):base(options)
+    public MiniEProjectDbContext(DbContextOptions<MiniEProjectDbContext> options) : base(options)
     {
     }
 
@@ -17,4 +18,11 @@ public class MiniEProjectDbContext : IdentityDbContext<AppUser>
     public DbSet<OrderProduct> OrderProducts { get; set; }
     public DbSet<Review> Reviews { get; set; }
     public DbSet<Product> Products { get; set; }
+
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(MiniEProjectDbContext).Assembly);
+    }
 }
