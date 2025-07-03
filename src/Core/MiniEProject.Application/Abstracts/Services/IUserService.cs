@@ -1,5 +1,9 @@
-﻿namespace MiniEProject.Application.Abstracts.Services;
+﻿using MiniEProject.Application.Shared.Responses;
+
+namespace MiniEProject.Application.Abstracts.Services;
 
 public interface IUserService
 {
+    
+    
 }

@@ -10,7 +10,12 @@ public static class ServiceRegistration
 {
     public static void RegisterService(this IServiceCollection services)
     {
+        //Repos
         services.AddScoped<ICategoryRepository, CategoryRepository>();
+
+        //Services
         services.AddScoped<ICategoryService, CategoryService>();
+        services.AddScoped<IRoleService, RoleService>();
+        
     }
 }

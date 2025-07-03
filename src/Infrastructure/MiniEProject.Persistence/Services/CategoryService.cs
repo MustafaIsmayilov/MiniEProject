@@ -5,132 +5,131 @@ using MiniEProject.Application.Abstracts.Services;
 using MiniEProject.Application.DTOs.CategoryDtos;
 using MiniEProject.Application.Shared.Responses;
 using MiniEProject.Domain.Entities;
+using AutoMapper;
 
 namespace MiniEProject.Persistence.Services;
+
 
 public class CategoryService : ICategoryService
 {
     private readonly ICategoryRepository _categoryRepository;
+    private readonly IMapper _mapper;
 
-    public CategoryService(ICategoryRepository categoryRepository)
+    public CategoryService(ICategoryRepository categoryRepository, IMapper mapper)
     {
         _categoryRepository = categoryRepository;
+        _mapper = mapper;
     }
 
-    public async Task<BaseResponse<string>> AddAsync(CategoryCreateDto dto)
+    public async Task<BaseResponse<string>> AddSubCategoryAsync(CategorySubCreateDto dto)
     {
-        var categoryDb = await _categoryRepository.GetByIdFiltered(
-            c => c.Name.Trim().ToLower() == dto.Name.Trim().ToLower())
-            .FirstOrDefaultAsync();
+        if (dto.ParentCategoryId == null || dto.ParentCategoryId == Guid.Empty)
+            return new BaseResponse<string>("Subcategory must have a valid parent category", HttpStatusCode.BadRequest);
 
-        if (categoryDb is not null)
-            return new BaseResponse<string>("This category already exists", HttpStatusCode.BadRequest);
+        var parentExists = await _categoryRepository
+            .GetByFiltered(c => c.Id == dto.ParentCategoryId)
+            .AnyAsync();
 
-        var category = new Category
-        {
-            Name = dto.Name
-        };
+        if (!parentExists)
+            return new BaseResponse<string>("Parent category not found", HttpStatusCode.BadRequest);
 
+        var exists = await _categoryRepository
+            .GetByFiltered(c => c.Name.Trim().ToLower() == dto.Name.Trim().ToLower() &&
+                                c.ParentCategoryId == dto.ParentCategoryId)
+            .AnyAsync();
+
+        if (exists)
+            return new BaseResponse<string>("This subcategory already exists under the specified parent", HttpStatusCode.BadRequest);
+
+        var category = _mapper.Map<Category>(dto);
         await _categoryRepository.AddAsync(category);
         await _categoryRepository.SaveChangeAsync();
 
-        return new BaseResponse<string>("Category successfully added", HttpStatusCode.Created);
+        return new BaseResponse<string>("Subcategory created", HttpStatusCode.OK);
     }
 
-    public async Task<BaseResponse<string>> DeleteAsync(Guid id)
+    public async Task<BaseResponse<string>> AddMainCategoryAsync(CategoryMainCreateDto dto)
     {
-        var category = await _categoryRepository.GetByIdAsync(id);
-        if (category is null)
-            return new BaseResponse<string>("Category is not found.", HttpStatusCode.NotFound);
+        var exists = await _categoryRepository
+            .GetByFiltered(c => c.Name.Trim().ToLower() == dto.Name.Trim().ToLower())
+            .AnyAsync();
 
-        _categoryRepository.Delete(category);
+        if (exists)
+            return new BaseResponse<string>("This main category already exists", HttpStatusCode.BadRequest);
+
+        var category = _mapper.Map<Category>(dto);
+        category.ParentCategoryId = Guid.Empty;
+        await _categoryRepository.AddAsync(category);
         await _categoryRepository.SaveChangeAsync();
 
-        return new BaseResponse<string>("Category has been deleted successfully.", HttpStatusCode.OK);
+        return new BaseResponse<string>("Main category created", HttpStatusCode.OK);
     }
 
-    public async Task<BaseResponse<List<CategoryGetDto>>> GetAllAsync()
+    public async Task<BaseResponse<object>> DeleteAsync(Guid id)
     {
-        var categories = _categoryRepository.GetAll();
-        if (categories == null || !categories.Any())
-            return new BaseResponse<List<CategoryGetDto>>("No categories found.", HttpStatusCode.NotFound);
+        var categoryDb = await _categoryRepository.GetByIdAsync(id);
+        if (categoryDb == null)
+            return new BaseResponse<object>("Id not found", HttpStatusCode.NotFound);
 
-        var dtoList = categories.Select(category => new CategoryGetDto
-        {
-            Id = category.Id,
-            Name = category.Name
-        }).ToList();
+        _categoryRepository.Delete(categoryDb);
+        await _categoryRepository.SaveChangeAsync();
 
-        return new BaseResponse<List<CategoryGetDto>>("All categories retrieved", dtoList, HttpStatusCode.OK);
+        return new BaseResponse<object>("Category is deleted", HttpStatusCode.OK);
     }
 
-    public async Task<BaseResponse<CategoryGetDto>> GetByIdAsync(Guid id)
+    public async Task<BaseResponse<List<CategoryMainGetDto>>> GetAllAsync()
     {
-        var category = await _categoryRepository.GetByIdAsync(id);
-        if (category is null)
-            return new BaseResponse<CategoryGetDto>("Category not found.", HttpStatusCode.NotFound);
+        var categories = await _categoryRepository
+            .GetAll()
+            .Where(c => c.ParentCategoryId == Guid.Empty)  
+            .Include(c => c.SubCategories)
+            .ToListAsync();
 
-        var dtoCategory = new CategoryGetDto
-        {
-            Id = category.Id,
-            Name = category.Name
-        };
-        return new BaseResponse<CategoryGetDto>("Category retrieved successfully", dtoCategory, HttpStatusCode.OK);
+        var dtos = _mapper.Map<List<CategoryMainGetDto>>(categories);
+
+        return new BaseResponse<List<CategoryMainGetDto>>("Success", dtos, HttpStatusCode.OK);
     }
 
-    public async Task<BaseResponse<CategoryGetDto>> GetByNameAsync(string search)
+    
+    public async Task<BaseResponse<CategoryUpdateDto>> UpdateAsync(Guid? id, CategoryUpdateDto dto)
     {
-        var categories = _categoryRepository.GetAll();
-        var category = categories.FirstOrDefault(c => c.Name.Equals(search, StringComparison.OrdinalIgnoreCase));
+        if (id == null || id == Guid.Empty)
+            return new BaseResponse<CategoryUpdateDto>("Invalid Id", HttpStatusCode.BadRequest);
 
-        if (category == null)
-            return new BaseResponse<CategoryGetDto>("Category not found.", HttpStatusCode.NotFound);
+        var categoryDb = await _categoryRepository.GetByIdAsync(id.Value);
+        if (categoryDb == null)
+            return new BaseResponse<CategoryUpdateDto>("Category not found", HttpStatusCode.NotFound);
 
-        var dtoCategory = new CategoryGetDto
-        {
-            Id = category.Id,
-            Name = category.Name
-        };
-
-        return new BaseResponse<CategoryGetDto>("Category found", dtoCategory, HttpStatusCode.OK);
-    }
-
-    public async Task<BaseResponse<List<CategoryGetDto>>> GetAllNameAsync(string namePart)
-    {
-        var categories = _categoryRepository.GetAll();
-        var filteredCategories = categories
-            .Where(c => c.Name.Contains(namePart, StringComparison.OrdinalIgnoreCase))
-            .Select(c => new CategoryGetDto
-            {
-                Id = c.Id,
-                Name = c.Name
-            }).ToList();
-
-        if (!filteredCategories.Any())
-            return new BaseResponse<List<CategoryGetDto>>("No matching categories found.", HttpStatusCode.NotFound);
-
-        return new BaseResponse<List<CategoryGetDto>>("Matching categories retrieved", filteredCategories, HttpStatusCode.OK);
-    }
-
-    public async Task<BaseResponse<CategoryUpdateDto>> UpdateAsync(CategoryUpdateDto dto)
-    {
-        var category = await _categoryRepository.GetByIdAsync(dto.Id);
-        if (category is null)
-            return new BaseResponse<CategoryUpdateDto>("Category not found.", HttpStatusCode.NotFound);
-
-        var existedCategory = await _categoryRepository.GetByIdFiltered(
-            c => c.Name.Trim().ToLower() == dto.Name.Trim().ToLower() && c.Id != dto.Id)
-            .FirstOrDefaultAsync();
-
-        if (existedCategory is not null)
-            return new BaseResponse<CategoryUpdateDto>("This category name is already taken.", HttpStatusCode.BadRequest);
-
-        category.Name = dto.Name;
         
+        _mapper.Map(dto, categoryDb);
 
         await _categoryRepository.SaveChangeAsync();
 
-        return new BaseResponse<CategoryUpdateDto>("Category successfully updated.", dto, HttpStatusCode.OK);
+        var updatedDto = _mapper.Map<CategoryUpdateDto>(categoryDb);
+        return new BaseResponse<CategoryUpdateDto>("Category updated", updatedDto, HttpStatusCode.OK);
+    }
+
+    public async Task<BaseResponse<string>> GetByIdAsync(Guid id)
+    {
+        var categoryDb = await _categoryRepository.GetByIdAsync(id);
+        if (categoryDb == null)
+            return new BaseResponse<string>("Category not found", HttpStatusCode.NotFound);
+
+        var dto = _mapper.Map<CategoryMainGetDto>(categoryDb);
+        return new BaseResponse<string>("Success", HttpStatusCode.OK); 
+    }
+
+    public async Task<BaseResponse<List<CategoryMainGetDto>>> GetByNameAsync(string search)
+    {
+        var categories = await _categoryRepository
+            .GetAll()
+            .Where(c => c.Name.ToLower().Contains(search.Trim().ToLower()))
+            .Include(c => c.SubCategories)
+            .ToListAsync();
+
+        var dtos = _mapper.Map<List<CategoryMainGetDto>>(categories);
+
+        return new BaseResponse<List<CategoryMainGetDto>>("Success", dtos, HttpStatusCode.OK);
     }
 }
 
