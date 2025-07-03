@@ -3,7 +3,7 @@ using MiniEProject.Application.DTOs.CategoryDtos;
 
 namespace MiniEProject.Application.Validations.CategoryValidations;
 
-public class CategoryCreateDtoValidator : AbstractValidator<CategoryCreateDto>
+public class CategoryCreateDtoValidator : AbstractValidator<CategoryMainCreateDto>
 {
     public CategoryCreateDtoValidator()
     {

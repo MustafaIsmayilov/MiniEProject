@@ -8,53 +8,60 @@ using MiniEProject.Application.Shared.Responses;
 
 namespace MiniEProject.WebApi.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/[controller]/[action]")]
     [ApiController]
     public class CategoriesController : ControllerBase
     {
-        private ICategoryService _categoryService { get; }
+        private readonly ICategoryService _categoryService;
+
         public CategoriesController(ICategoryService categoryService)
         {
             _categoryService = categoryService;
-        }
-        
 
-        
-        [HttpGet]
-        public IEnumerable<string> Get()
-        {
-            return new string[] { "value1", "value2" };
         }
 
-        // GET api/<CategoriesController>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
-        {
-            return "value";
-        }
-
-        // POST api/<CategoriesController>
         [HttpPost]
-        [ProducesResponseType(typeof(BaseResponse<string>),(int)HttpStatusCode.Created)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.Created)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
 
-        public async Task<IActionResult> Post([FromBody] CategoryCreateDto dto)
+        public async Task<IActionResult> AddMainCategoryAsync([FromBody] CategoryMainCreateDto dto)
         {
-            var result = await _categoryService.AddAsync(dto);
+            var result = await _categoryService.AddMainCategoryAsync(dto);
             return StatusCode((int)result.StatusCode, result);
         }
 
-        // PUT api/<CategoriesController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        [HttpPost]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.Created)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
+        public async Task<IActionResult> AddSubCategoryAsync([FromBody] CategorySubCreateDto dto)
         {
+            var result = await _categoryService.AddSubCategoryAsync(dto);
+            return StatusCode((int)result.StatusCode, result);
         }
 
-        // DELETE api/<CategoriesController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
+
+        [HttpDelete]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.NotFound)]
+        [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
+
+        public async Task<IActionResult> DeleteAsync([FromBody] CategoryDeleteDto dto)
         {
+            var result = await _categoryService.DeleteAsync(dto.Id);
+            return StatusCode((int)result.StatusCode, result);
         }
+
+        [HttpGet]
+        [ProducesResponseType(typeof(BaseResponse<List<CategoryMainGetDto>>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(BaseResponse<List<CategoryMainGetDto>>), (int)HttpStatusCode.NotFound)]
+        [ProducesResponseType(typeof(BaseResponse<List<CategoryMainGetDto>>), (int)HttpStatusCode.InternalServerError)]
+        public async Task<IActionResult> GetAllAsync()
+        {
+            var result = await _categoryService.GetAllAsync();
+            return StatusCode((int)result.StatusCode, result);
+        }
+
     }
 }

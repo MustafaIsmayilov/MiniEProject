@@ -5,11 +5,17 @@ namespace MiniEProject.Application.Abstracts.Services;
 
 public interface ICategoryService
 {
-    Task<BaseResponse<string>> AddAsync(CategoryCreateDto dto);
-    Task<BaseResponse<string>> DeleteAsync(Guid id);
-    Task<BaseResponse<CategoryUpdateDto>> UpdateAsync(CategoryUpdateDto dto);
-    Task<BaseResponse<CategoryGetDto>> GetByIdAsync(Guid id);
-    Task<BaseResponse<CategoryGetDto>> GetByNameAsync(string search);
-    Task<BaseResponse<List<CategoryGetDto>>> GetAllNameAsync(string NamePart);
-    Task<BaseResponse<List<CategoryGetDto>>> GetAllAsync();
+    Task<BaseResponse<string>> AddMainCategoryAsync(CategoryMainCreateDto dto);
+
+    Task<BaseResponse<string>> AddSubCategoryAsync(CategorySubCreateDto dto);
+
+    Task<BaseResponse<CategoryUpdateDto>> UpdateAsync(Guid? id, CategoryUpdateDto dto);
+
+    Task<BaseResponse<object>> DeleteAsync(Guid id);
+
+    Task<BaseResponse<string>> GetByIdAsync(Guid id);
+
+    Task<BaseResponse<List<CategoryMainGetDto>>> GetByNameAsync(string search);
+
+    Task<BaseResponse<List<CategoryMainGetDto>>> GetAllAsync();
 }

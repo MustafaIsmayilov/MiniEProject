@@ -1,21 +1,27 @@
+using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using MiniEProject.Application.Abstracts.Repositories;
-using MiniEProject.Application.Abstracts.Services;
+using Microsoft.Extensions.DependencyInjection;
+using MiniEProject.Application.Mapping;
+using MiniEProject.Application.Validations.CategoryValidations;
 using MiniEProject.Domain.Entities;
 using MiniEProject.Persistence;
 using MiniEProject.Persistence.Contexts;
-using MiniEProject.Persistence.Repositories;
-using MiniEProject.Persistence.Services;
+using MiniEProject.WebApi.MiddleWare;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
+builder.Services.AddValidatorsFromAssembly(typeof(CategoryCreateDtoValidator).Assembly);
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddAutoMapper(typeof(CategoryProfile).Assembly);
+
+
+
+
+
 
 builder.Services.AddDbContext<MiniEProjectDbContext>(options =>
 {
@@ -43,6 +49,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseMiddleware<ExceptionHandlerMiddleware>();
 
 app.UseAuthorization();
 
