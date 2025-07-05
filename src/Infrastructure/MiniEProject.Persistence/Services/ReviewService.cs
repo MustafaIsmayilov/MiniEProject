@@ -1,5 +1,7 @@
-﻿namespace MiniEProject.Persistence.Services;
+﻿using MiniEProject.Application.Abstracts.Services;
 
-public class ReviewService
+namespace MiniEProject.Persistence.Services;
+
+public class ReviewService:IReviewService
 {
 }

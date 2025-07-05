@@ -8,9 +8,7 @@ public class CategoryProfile:Profile
 {
     public CategoryProfile()
     {
-        // Category -> CategoryDeleteDto (sadece Id maplansin)
-        CreateMap<Category, CategoryDeleteDto>();
-
+        
         // CategoryMainCreateDto -> Category
         CreateMap<CategoryMainCreateDto, Category>()
             .ForMember(dest => dest.ParentCategoryId, opt => opt.Ignore())  // ParentCategoryId burada yoxdu, ignore edirik

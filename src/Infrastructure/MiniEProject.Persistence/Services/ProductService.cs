@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using MiniEProject.Application.Abstracts.Services;
 
-namespace MiniEProject.Persistence.Services
+namespace MiniEProject.Persistence.Services;
+
+public class ProductService:IProductService
 {
-    internal class ProductService
-    {
-    }
 }

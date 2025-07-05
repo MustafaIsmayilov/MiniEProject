@@ -12,10 +12,13 @@ public static class ServiceRegistration
     {
         //Repos
         services.AddScoped<ICategoryRepository, CategoryRepository>();
+        services.AddScoped<IProductRepository, ProductRepository>();
+
 
         //Services
         services.AddScoped<ICategoryService, CategoryService>();
         services.AddScoped<IRoleService, RoleService>();
-        
+        services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IEmailService, EmailService>();
     }
 }

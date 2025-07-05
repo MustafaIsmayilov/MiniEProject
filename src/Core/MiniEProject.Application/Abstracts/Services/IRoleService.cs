@@ -5,8 +5,8 @@ namespace MiniEProject.Application.Abstracts.Services;
 
 public interface IRoleService
 {
-    Task<BaseResponse<List<RoleGetDto>>> GetAllRolesAsync();
-    Task<BaseResponse<RoleGetDto>> GetRoleByNameAsync(string roleName);
+    Task<BaseResponse<RoleGetDto>> RoleGetByIdAsync(string RoleId);
     Task<BaseResponse<string?>> CreateRoleAsync(RoleCreateDto dto);
-    Task<BaseResponse<string?>> DeleteRoleAsync(string roleName);
+    Task<BaseResponse<string?>> DeleteRoleAsync(string id);
+    Task<BaseResponse<string?>> UpdateRoleAsync(RoleUpdateDto dto);
 }
