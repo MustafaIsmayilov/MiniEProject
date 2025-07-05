@@ -1,7 +1,9 @@
 ﻿using System.Net;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MiniEProject.Application.Abstracts.Services;
 using MiniEProject.Application.DTOs.CategoryDtos;
+using MiniEProject.Application.Shared;
 using MiniEProject.Application.Shared.Responses;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -21,6 +23,7 @@ namespace MiniEProject.WebApi.Controllers
         }
 
         [HttpPost]
+        [Authorize(Policy = Permissions.Category.MainCreate)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.Created)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
@@ -32,6 +35,7 @@ namespace MiniEProject.WebApi.Controllers
         }
 
         [HttpPost]
+        [Authorize(Policy = Permissions.Category.SubCreate)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.Created)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
@@ -40,18 +44,17 @@ namespace MiniEProject.WebApi.Controllers
             var result = await _categoryService.AddSubCategoryAsync(dto);
             return StatusCode((int)result.StatusCode, result);
         }
-
-
-        [HttpDelete]
+        
+        [HttpDelete("{id}")]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.NotFound)]
         [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
-
-        public async Task<IActionResult> DeleteAsync([FromBody] CategoryDeleteDto dto)
+        public async Task<IActionResult> Delete(Guid id)
         {
-            var result = await _categoryService.DeleteAsync(dto.Id);
-            return StatusCode((int)result.StatusCode, result);
+            var result= await _categoryService.DeleteAsync(id);
+            return StatusCode((int)result.StatusCode,result);
         }
+        
 
         [HttpGet]
         [ProducesResponseType(typeof(BaseResponse<List<CategoryMainGetDto>>), (int)HttpStatusCode.OK)]
@@ -62,6 +65,5 @@ namespace MiniEProject.WebApi.Controllers
             var result = await _categoryService.GetAllAsync();
             return StatusCode((int)result.StatusCode, result);
         }
-
     }
 }
