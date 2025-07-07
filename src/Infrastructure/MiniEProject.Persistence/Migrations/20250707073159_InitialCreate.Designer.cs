@@ -12,7 +12,7 @@ using MiniEProject.Persistence.Contexts;
 namespace MiniEProject.Persistence.Migrations
 {
     [DbContext(typeof(MiniEProjectDbContext))]
-    [Migration("20250704174551_InitialCreate")]
+    [Migration("20250707073159_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -168,8 +168,8 @@ namespace MiniEProject.Persistence.Migrations
 
                     b.Property<string>("Address")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<int>("Age")
                         .HasColumnType("int");
@@ -190,8 +190,8 @@ namespace MiniEProject.Persistence.Migrations
 
                     b.Property<string>("FullName")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
@@ -220,7 +220,8 @@ namespace MiniEProject.Persistence.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("RefreshToken")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
@@ -448,8 +449,8 @@ namespace MiniEProject.Persistence.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -492,6 +493,7 @@ namespace MiniEProject.Persistence.Migrations
                         .HasColumnType("nvarchar(1000)");
 
                     b.Property<DateTime?>("CreatedAt")
+                        .IsRequired()
                         .HasColumnType("datetime2");
 
                     b.Property<Guid?>("CreatedUser")
@@ -593,7 +595,8 @@ namespace MiniEProject.Persistence.Migrations
 
                     b.HasOne("MiniEProject.Domain.Entities.AppUser", "User")
                         .WithMany("Favourites")
-                        .HasForeignKey("UserId");
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("Product");
 
@@ -615,7 +618,8 @@ namespace MiniEProject.Persistence.Migrations
                 {
                     b.HasOne("MiniEProject.Domain.Entities.AppUser", "User")
                         .WithMany("Orders")
-                        .HasForeignKey("UserId");
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("User");
                 });
@@ -649,7 +653,8 @@ namespace MiniEProject.Persistence.Migrations
 
                     b.HasOne("MiniEProject.Domain.Entities.AppUser", "User")
                         .WithMany("Products")
-                        .HasForeignKey("UserId");
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Category");
 
@@ -666,7 +671,8 @@ namespace MiniEProject.Persistence.Migrations
 
                     b.HasOne("MiniEProject.Domain.Entities.AppUser", "User")
                         .WithMany("Reviews")
-                        .HasForeignKey("UserId");
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("Product");
 

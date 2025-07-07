@@ -1,9 +1,9 @@
 ﻿using System.Text;
 using FluentValidation;
+using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MiniEProject.Application.Helper;
@@ -17,10 +17,22 @@ using MiniEProject.WebApi.MiddleWare;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// ✅ FluentValidation (v11.6.0 və yuxarısı üçün)
 builder.Services.AddValidatorsFromAssembly(typeof(CategoryCreateDtoValidator).Assembly);
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddFluentValidationClientsideAdapters();
+
+// ✅ Controller-lar və AutoMapper
 builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddAutoMapper(typeof(CategoryProfile).Assembly);
+
+// ✅ DbContext
+builder.Services.AddDbContext<MiniEProjectDbContext>(options =>
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("Default"));
+});
+
+// ✅ Swagger + JWT Token Security
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
@@ -33,7 +45,6 @@ builder.Services.AddSwaggerGen(options =>
         In = ParameterLocation.Header,
         Type = SecuritySchemeType.Http,
         Description = "Enter your JWT Token like this: Bearer {your token}",
-
         Reference = new OpenApiReference
         {
             Id = JwtBearerDefaults.AuthenticationScheme,
@@ -41,41 +52,37 @@ builder.Services.AddSwaggerGen(options =>
         }
     };
 
-    // ⬇️ Əlavə olunan hissə (əvvəl səndə yox idi)
     options.AddSecurityDefinition(jwtSecurityScheme.Reference.Id, jwtSecurityScheme);
-
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         { jwtSecurityScheme, Array.Empty<string>() }
     });
 });
 
-builder.Services.AddAutoMapper(typeof(CategoryProfile).Assembly);
-
-builder.Services.AddDbContext<MiniEProjectDbContext>(options =>
-{
-    options.UseSqlServer(builder.Configuration.GetConnectionString("Default"));
-});
+// ✅ Custom Services (Repository, Service layer və s.)
 builder.Services.RegisterService();
+builder.Services.AddHttpContextAccessor(); // əgər istifadə edirsənsə
 
-builder.Services.AddIdentity<AppUser, IdentityRole>(
-options =>
+// ✅ Identity
+builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
 {
     options.Password.RequireDigit = false;
     options.Password.RequiredLength = 6;
-
     options.Lockout.MaxFailedAccessAttempts = 5;
+    options.User.RequireUniqueEmail = true;
 })
-    .AddEntityFrameworkStores<MiniEProjectDbContext>()
-    .AddDefaultTokenProviders();
+.AddEntityFrameworkStores<MiniEProjectDbContext>()
+.AddDefaultTokenProviders();
 
+// ✅ AppSettings - JWT və Email konfiqurasiya
 builder.Services.Configure<JWTSettings>(builder.Configuration.GetSection("JwtSettings"));
 builder.Services.Configure<EmailSetting>(builder.Configuration.GetSection("EmailSetting"));
 var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JWTSettings>();
 
+// ✅ Authorization və Permissions
 builder.Services.AddAuthorization(options =>
 {
-    foreach(var permission in PermissionHelper.GetPermissionList())
+    foreach (var permission in PermissionHelper.GetPermissionList())
     {
         options.AddPolicy(permission, policy =>
         {
@@ -84,6 +91,7 @@ builder.Services.AddAuthorization(options =>
     }
 });
 
+// ✅ Authentication - JWT Token
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -91,7 +99,7 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    options.RequireHttpsMetadata = false; // Set true in production
+    options.RequireHttpsMetadata = false; // production-da true et
     options.SaveToken = true;
     options.TokenValidationParameters = new TokenValidationParameters
     {
@@ -106,10 +114,10 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-
+// ✅ Build
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// ✅ Middleware və HTTP pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -117,13 +125,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
+app.UseStaticFiles();
 app.UseMiddleware<ExceptionHandlerMiddleware>();
-
-app.UseAuthentication(); // ⬅️ Bu da olmalıdır
+app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();
 
