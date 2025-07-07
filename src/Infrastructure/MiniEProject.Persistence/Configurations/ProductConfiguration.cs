@@ -16,12 +16,35 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(pc => pc.Stock).IsRequired();
         builder.Property(pc => pc.Condition).HasConversion<string>();
 
-        builder.HasOne(pc => pc.User)
-               .WithMany(u => u.Products)
-               .HasForeignKey(p => p.UserId);
+        builder.Property(x => x.Description)
+            .HasMaxLength(1000);
 
-        builder.HasOne(p => p.Category)
-               .WithMany(c => c.Products)
-               .HasForeignKey(p => p.CategoryId);
+        builder.Property(x => x.Price)
+            .IsRequired();
+
+        builder.HasOne(x => x.Category)
+            .WithMany(x => x.Products)
+            .HasForeignKey(x => x.CategoryId);
+
+        builder.HasOne(p => p.User)
+         .WithMany(u => u.Products)
+         .HasForeignKey(p => p.UserId)
+         .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasMany(x => x.ProductImages)
+            .WithOne(x => x.Product)
+            .HasForeignKey(x => x.ProductId);
+
+        builder.HasMany(x => x.Favourites)
+         .WithOne(x => x.Product)
+         .HasForeignKey(x => x.ProductId);
+
+        builder.HasMany(x => x.Reviews)
+            .WithOne(x => x.Product)
+            .HasForeignKey(x => x.ProductId);
+
+        builder.HasMany(x => x.OrderProducts)
+            .WithOne(x => x.Product)
+            .HasForeignKey(x => x.ProductId);
     }
 }

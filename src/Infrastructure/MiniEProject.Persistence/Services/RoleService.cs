@@ -9,50 +9,28 @@ namespace MiniEProject.Persistence.Services;
 
 public class RoleService : IRoleService
 {
-    private RoleManager<IdentityRole> _roleManager { get; }
+    private readonly RoleManager<IdentityRole> _roleManager;
 
     public RoleService(RoleManager<IdentityRole> roleManager)
     {
         _roleManager = roleManager;
     }
-    public async Task<BaseResponse<RoleGetDto>> RoleGetByIdAsync(string RoleId)
-    {
-        var role = await _roleManager.FindByIdAsync(RoleId);
-        if (role is null)
-            return new("Role doesn't exist", HttpStatusCode.NotFound);
 
-        var claims = await _roleManager.GetClaimsAsync(role);
-        var GetPermission = new List<string>();
-        foreach (var claim in claims)
-        {
-            GetPermission.Add(claim.Value);
-        }
-
-        var existedRole = new RoleGetDto
-        {
-
-            RoleId = role.Id,
-            Name = role.Name,
-            Permissions = GetPermission
-        };
-
-        return new("Role and its permissions", existedRole, HttpStatusCode.OK);
-
-
-    }
     public async Task<BaseResponse<string?>> CreateRoleAsync(RoleCreateDto dto)
     {
-        var existingRole = await _roleManager.FindByNameAsync(dto.Name);
-        if (existingRole is not null)
-            return new("Bu adda rol artıq mövcuddur", HttpStatusCode.BadRequest);
+        var roleName = dto.Role.ToString();
 
-        var identityRole = new IdentityRole(dto.Name);
-        var result = await _roleManager.CreateAsync(identityRole);
-            
-        if (!result.Succeeded)
+        var existingRole = await _roleManager.FindByNameAsync(roleName);
+        if (existingRole is not null)
+            return new BaseResponse<string?>("A role with this name already exists.", HttpStatusCode.BadRequest);
+
+        var identityRole = new IdentityRole(roleName);
+        var createResult = await _roleManager.CreateAsync(identityRole);
+
+        if (!createResult.Succeeded)
         {
-            var errorMessages = string.Join(";", result.Errors.Select(e => e.Description));
-            return new(errorMessages, HttpStatusCode.BadRequest);
+            var errorMessage = string.Join(";", createResult.Errors.Select(e => e.Description));
+            return new BaseResponse<string?>(errorMessage, HttpStatusCode.BadRequest);
         }
 
         foreach (var permission in dto.PermissionList.Distinct())
@@ -61,53 +39,92 @@ public class RoleService : IRoleService
             if (!claimResult.Succeeded)
             {
                 var error = string.Join(";", claimResult.Errors.Select(e => e.Description));
-                return new($"Role created,but adding permission '{permission}' failed:{error}", HttpStatusCode.PartialContent);
+                return new BaseResponse<string?>($"Role was created, but permission '{permission}' could not be added: {error}", HttpStatusCode.PartialContent);
             }
         }
-        return new("Role created succesfully", true, HttpStatusCode.Created);
+
+        return new BaseResponse<string?>("Role created successfully.", true, HttpStatusCode.Created);
     }
 
     public async Task<BaseResponse<string?>> UpdateRoleAsync(RoleUpdateDto dto)
     {
         var role = await _roleManager.FindByIdAsync(dto.RoleId);
-
         if (role is null)
-        {
-            return new("Role is not found", HttpStatusCode.NotFound);
-        }
+            return new BaseResponse<string?>("Role not found.", HttpStatusCode.NotFound);
 
         if (!string.IsNullOrWhiteSpace(dto.Name) && dto.Name != role.Name)
         {
             role.Name = dto.Name;
-            var nameResult = await _roleManager.UpdateAsync(role);
+            var updateResult = await _roleManager.UpdateAsync(role);
 
-            if (!nameResult.Succeeded)
-                return new("Name cannot update", HttpStatusCode.BadRequest);
+            if (!updateResult.Succeeded)
+            {
+                var error = string.Join(";", updateResult.Errors.Select(e => e.Description));
+                return new BaseResponse<string?>($"Failed to update role name: {error}", HttpStatusCode.BadRequest);
+            }
         }
 
-        // Permission dəyişmək istəyirsə
         if (dto.PermissionList is not null)
         {
             var currentClaims = await _roleManager.GetClaimsAsync(role);
-            foreach (var c in currentClaims.Where(c => c.Type == "Permission"))
-                await _roleManager.RemoveClaimAsync(role, c);
 
-            foreach (var p in dto.PermissionList.Distinct())
-                await _roleManager.AddClaimAsync(role, new Claim("Permission", p));
+            foreach (var claim in currentClaims.Where(c => c.Type == "Permission"))
+            {
+                await _roleManager.RemoveClaimAsync(role, claim);
+            }
+
+            foreach (var permission in dto.PermissionList.Distinct())
+            {
+                var addResult = await _roleManager.AddClaimAsync(role, new Claim("Permission", permission));
+                if (!addResult.Succeeded)
+                {
+                    var error = string.Join(";", addResult.Errors.Select(e => e.Description));
+                    return new BaseResponse<string?>($"Failed to add new permission '{permission}': {error}", HttpStatusCode.PartialContent);
+                }
+            }
         }
-        return new("Role succesfully updated", true, HttpStatusCode.OK);
+
+        return new BaseResponse<string?>("Role updated successfully.", true, HttpStatusCode.OK);
     }
 
     public async Task<BaseResponse<string?>> DeleteRoleAsync(string id)
     {
         var role = await _roleManager.FindByIdAsync(id);
         if (role is null)
-            return new("Role is not found", HttpStatusCode.NotFound);
+            return new BaseResponse<string?>("Role not found.", HttpStatusCode.NotFound);
 
-        await _roleManager.DeleteAsync(role);
-        return new("Role succesfully deleted", true, HttpStatusCode.OK);
+        var deleteResult = await _roleManager.DeleteAsync(role);
+
+        if (!deleteResult.Succeeded)
+        {
+            var error = string.Join(";", deleteResult.Errors.Select(e => e.Description));
+            return new BaseResponse<string?>($"Failed to delete role: {error}", HttpStatusCode.BadRequest);
+        }
+
+        return new BaseResponse<string?>("Role deleted successfully.", true, HttpStatusCode.OK);
     }
 
-    
+    public async Task<BaseResponse<RoleGetDto>> RoleGetByIdAsync(string RoleId)
+    {
+        var role = await _roleManager.FindByIdAsync(RoleId);
+        if (role is null)
+            return new BaseResponse<RoleGetDto>("Role not found.", HttpStatusCode.NotFound);
+
+        var claims = await _roleManager.GetClaimsAsync(role);
+        var permissions = claims
+            .Where(c => c.Type == "Permission")
+            .Select(c => c.Value)
+            .ToList();
+
+        var roleDto = new RoleGetDto
+        {
+            RoleId = role.Id,
+            Name = role.Name,
+            Permissions = permissions
+        };
+
+        return new BaseResponse<RoleGetDto>("Role and its permissions retrieved successfully.", roleDto, HttpStatusCode.OK);
+    }
 }
+
 

@@ -8,10 +8,16 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
 {
     public void Configure(EntityTypeBuilder<Order> builder)
     {
-        builder.HasKey(o => o.Id);
+        builder.Property(x => x.OrderDate)
+            .IsRequired();
+
+        builder.HasMany(x => x.OrderProducts)
+            .WithOne(x => x.Order)
+            .HasForeignKey(x => x.OrderId);
 
         builder.HasOne(o => o.User)
-               .WithMany(u => u.Orders)
-               .HasForeignKey(o => o.UserId);
+            .WithMany(u => u.Orders)
+            .HasForeignKey(o => o.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
