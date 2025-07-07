@@ -6,8 +6,6 @@ using MiniEProject.Application.DTOs.CategoryDtos;
 using MiniEProject.Application.Shared;
 using MiniEProject.Application.Shared.Responses;
 
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-
 namespace MiniEProject.WebApi.Controllers
 {
     [Route("api/[controller]/[action]")]

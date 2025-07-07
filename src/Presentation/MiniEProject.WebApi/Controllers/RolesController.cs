@@ -9,34 +9,47 @@ namespace MiniEProject.WebApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class RolesController : ControllerBase
+    public class RoleController : ControllerBase
     {
         private readonly IRoleService _roleService;
 
-        public RolesController(IRoleService roleService)
+        public RoleController(IRoleService roleService)
         {
             _roleService = roleService;
         }
 
-        [HttpGet]
-        public IActionResult GetAllPermission()
-        {
-            var permissions = PermissionHelper.GetAllPermissions();
-            return Ok(permissions);
-        }
+        // POST: api/roles
         [HttpPost]
-        public async Task<IActionResult> CreateRole([FromBody] RoleCreateDto dto)
+        public async Task<IActionResult> Create([FromBody] RoleCreateDto dto)
         {
             var result = await _roleService.CreateRoleAsync(dto);
             return StatusCode((int)result.StatusCode, result);
         }
 
-        [HttpPut]
-        public async Task<IActionResult> UpdateRole([FromBody] RoleUpdateDto dto)
+        // PUT: api/roles/{id}
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update([FromBody] RoleUpdateDto dto)
         {
             var result = await _roleService.UpdateRoleAsync(dto);
             return StatusCode((int)result.StatusCode, result);
         }
+
+        // GET: api/roles/{id}
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(string id)
+        {
+            var result = await _roleService.RoleGetByIdAsync(id);
+            return StatusCode((int)result.StatusCode, result);
+        }
+
+        // DELETE: api/roles/{id}
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(string id)
+        {
+            var result = await _roleService.DeleteRoleAsync(id);
+            return StatusCode((int)result.StatusCode, result);
+        }
     }
+
 }
 
